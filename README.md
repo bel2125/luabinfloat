@@ -8,8 +8,9 @@ Implementation
 This is a pure Lua implementation for encoding/decoding IEEE754 floating numbers, tested with Lua5.2 to Lua5.4.
 It has no external dependencies.
 
-The function `bin2single()` converts a 4 bytes little endian IEEE754 encoded single precision floating numbers into Lua numbers. </br>
-The function `bin2single()` converts an 8 bytes little endian IEEE754 single precision encoded floating numbers into Lua numbers.
+The function `bin2single(data)` converts a 4 bytes string `data` containing little endian IEEE754 encoded single precision floating numbers into a Lua number.
+
+The function `bin2double(data)` converts an 8 bytes string `data` containing little endian IEEE754 single precision encoded floating numbers into a Lua number.
 
 Example: 
 ```Lua
@@ -29,7 +30,7 @@ Byte order
 ---
 
 The code assumes little endian data encoding ("Intel byte order").
-In case you have big endian data, turn the order of bytes:
+In case you have big endian data ("Network byte order"), turn the order of bytes:
 function | little endian | big endian
 --|--|--
 `bin2single(data)` | `local a,b,c,d = data:byte(1, 4);` | `local d,c,b,a = data:byte(1, 4);`  
