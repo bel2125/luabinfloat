@@ -14,7 +14,7 @@ function bin2double(data)
   local gr = g % 16
   local exp = (h % 128) * 16 + (g - gr) / 16
 
-  if exp == 1023 then
+  if exp == 2047 then
     return (-1)^sign * math.huge;
   end
 
@@ -36,14 +36,14 @@ function bin2double(data)
     frac = frac + bt(b,2^(8-i))/2^(36+i)
   end
   for i=1,8 do
-    frac = frac + bt(a,2^(8-i))/2^(42+i)
+    frac = frac + bt(a,2^(8-i))/2^(44+i)
   end
 
   return (-1)^sign * frac * 2^(exp-1023)
 end
 
 
--- convert 8 bytes binary string encoding an IEEE754 single precision floating point number to a Lua number
+-- convert 4 bytes binary string encoding an IEEE754 single precision floating point number to a Lua number
 function bin2single(data)
   local a,b,c,d = data:byte(1, 4);
   local bt = function(val, m) return math.floor(val / m) % 2 end
@@ -69,4 +69,60 @@ function bin2single(data)
   end
 
   return (-1)^sign * frac * 2^(exp-127)
+end
+
+
+-- split floating pointnumber into sign, exponent and mantissa
+local function floatsplit(n)
+  local s = 0 -- sign
+  local e = 0 -- exponent
+  local f = n -- fraction
+  local bs = ""; -- fraction as bit string
+
+  if n<0.0 then s = 1; f = -n; end
+  if n==0 then return s, e, f, bs; end
+  while f>=2.0 do e=e+1 f=f/2.0; end
+  while f<1.0 do e=e-1 f=f*2.0; end
+
+  local br = f - 1.0;
+  while (br > 0) do
+    br = br * 2;
+    if br >= 1.0 then
+      br = br - 1.0;
+      bs = bs .. "1";
+    else
+      bs = bs .. "0";
+    end
+  end
+
+  return s,e,f,bs
+end
+
+-- convert number into 8 byte double precision floating point number
+function double2bin(num)
+  if (num == 0.0) then return string.char(0, 0, 0, 0, 0, 0, 0, 0) end
+  if (num == -0.0) then return string.char(0, 0, 0, 0, 0, 0, 0, 128) end
+
+  local sign, exponent, fraction, mantis = floatsplit(num)
+  exponent = exponent + 1023;
+  mantis = mantis .. string.rep("0", 52-string.len(mantis))
+  mantis = mantis:sub(1,52)
+  local mantisnum = tonumber(mantis, 2)
+
+  local b1 = sign*128 + math.floor(exponent / 16)
+  local b2 = math.floor(exponent % 16) * 16 + math.floor(mantisnum / 2^48)
+  mantisnum = mantisnum % 2^48
+  local b3 = math.floor(mantisnum / 2^40)
+  mantisnum = mantisnum % 2^40
+  local b4 = math.floor(mantisnum / 2^32)
+  mantisnum = mantisnum % 2^32
+  local b5 = math.floor(mantisnum / 2^24)
+  mantisnum = mantisnum % 2^24
+  local b6 = math.floor(mantisnum / 2^16)
+  mantisnum = mantisnum % 2^16
+  local b7 = math.floor(mantisnum / 2^8)
+  mantisnum = mantisnum % 2^8
+  local b8 = math.floor(mantisnum + 0.5)
+
+  return string.char(b8,b7,b6,b5,b4,b3,b2,b1)
 end
