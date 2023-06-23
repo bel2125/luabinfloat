@@ -126,3 +126,26 @@ function double2bin(num)
 
   return string.char(b8,b7,b6,b5,b4,b3,b2,b1)
 end
+
+
+-- convert number into 4 byte single precision floating point number
+function single2bin(num)
+  if (num == 0.0) then return string.char(0, 0, 0, 0) end
+  if (num == -0.0) then return string.char(0, 0, 0, 128) end
+
+  local sign, exponent, fraction, mantis = floatsplit(num)
+  exponent = exponent + 127;
+  mantis = mantis .. string.rep("0", 23-string.len(mantis))
+  mantis = mantis:sub(1,23)
+  local mantisnum = tonumber(mantis, 2)
+
+  local b1 = sign*128 + math.floor(exponent / 2)
+  local b2 = math.floor(exponent % 2) * 128 + math.floor(mantisnum / 2^16)
+  mantisnum = mantisnum % 2^16
+  local b3 = math.floor(mantisnum / 2^8)
+  mantisnum = mantisnum % 2^8
+  local b4 = math.floor(mantisnum + 0.5)
+
+  return string.char(b4,b3,b2,b1)
+end
+
