@@ -1,10 +1,18 @@
--- binfloat.lua: A pure Lua implementation for encoding/decoding IEEE754 floating numbers, tested with Lua5.2 to Lua5.4
+-- binfloat.lua: 
+-- A pure Lua implementation for encoding/decoding IEEE754 floating numbers, tested with Lua5.2 to Lua5.4
 -- This code assumes little endian data encoding ("Intel byte order").
+binfloat = {}
+
+
+-- bit test
+local function bt(val, m) 
+    return math.floor(val / m) % 2 
+end
+
 
 -- convert 8 bytes binary string encoding an IEEE754 double precision floating point number to a Lua number
-function bin2double(data)
+binfloat.decode_double = function(data)
   local a,b,c,d,e,f,g,h = data:byte(1, 8);
-  local bt = function(val, m) return math.floor(val / m) % 2 end
   local sign = bt(h, 128)
 
   if ((h % 128) == 0) and (g == 0) and (f == 0) and (e == 0) and (d == 0) and (c == 0) and (b == 0) and (a == 0) then
@@ -44,9 +52,8 @@ end
 
 
 -- convert 4 bytes binary string encoding an IEEE754 single precision floating point number to a Lua number
-function bin2single(data)
+binfloat.decode_single = function(data)
   local a,b,c,d = data:byte(1, 4);
-  local bt = function(val, m) return math.floor(val / m) % 2 end
   local sign = bt(d, 128)
 
   if ((d % 128) == 0) and (c == 0) and (b == 0) and (a == 0) then
@@ -99,7 +106,7 @@ local function floatsplit(n)
 end
 
 -- convert number into 8 byte double precision floating point number
-function double2bin(num)
+binfloat.encode_double = function(num)
   if (num == 0.0) then return string.char(0, 0, 0, 0, 0, 0, 0, 0) end
   if (num == -0.0) then return string.char(0, 0, 0, 0, 0, 0, 0, 128) end
 
@@ -129,7 +136,7 @@ end
 
 
 -- convert number into 4 byte single precision floating point number
-function single2bin(num)
+binfloat.encode_single = function(num)
   if (num == 0.0) then return string.char(0, 0, 0, 0) end
   if (num == -0.0) then return string.char(0, 0, 0, 128) end
 
@@ -149,3 +156,6 @@ function single2bin(num)
   return string.char(b4,b3,b2,b1)
 end
 
+
+-- return the library table
+return binfloat
