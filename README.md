@@ -25,6 +25,13 @@ Example using a binary file `data.bin` containing two float numbers:
   print(binfloat.decode_single(data:sub(5,8)))
 ```
 
+Encoding into 4 byte single precision or 8 byte double precision binary floating point representations is also supported:
+```Lua
+  print(binfloat.decode_single(binfloat.encode_single(12.5)))
+  print(binfloat.decode_double(binfloat.encode_double(-7.2)))
+```
+
+Currently "infinity" (overflow) and "not a number" are not supported.
 
 Byte order
 ---
