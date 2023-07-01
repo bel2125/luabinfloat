@@ -28,25 +28,32 @@ function testsingle(num)
   return testnumber(num, binfloat.encode_single, binfloat.decode_single, 4, math.abs(num*1.1921e-07))
 end
 
-print("Starting test for double precision using " .. testcount .. " numbers");
-testdouble(0.0);
-for c = 1,testcount do  
-  local n = math.random()
-  testdouble(c)
-  testdouble(n)
-  testdouble(c*n)
-  testdouble(-c/n)
+function testall()
+  print("Starting test for double precision using " .. testcount .. " numbers");
+  testdouble(0.0);
+  for c = 1,testcount do  
+    local n = math.random()
+    testdouble(c)
+    testdouble(n)
+    testdouble(c*n)
+    testdouble(-c/n)
+  end
+  print("Starting test for single precision");
+  testsingle(0.0)
+  for c = 1,testcount do  
+    local n = math.random()
+    testsingle(c)
+    testsingle(n)
+    testsingle(c*n)
+    testsingle(-c/n)
+  end
+  if (not difference_detected) then
+    print("Test OK");
+  else
+    print("Test failed");
+  end
+  print("Test completed");
 end
-print("Starting test for single precision");
-testsingle(0.0)
-for c = 1,testcount do  
-  local n = math.random()
-  testsingle(c)
-  testsingle(n)
-  testsingle(c*n)
-  testsingle(-c/n)
-end
-if (not difference_detected) then
-  print("Test OK");
-end
-print("Test completed");
+
+-- run the test
+testall();
