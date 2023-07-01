@@ -8,11 +8,17 @@ Implementation
 This is a pure Lua implementation for encoding/decoding IEEE754 floating numbers, tested with Lua5.2 to Lua5.4.
 It has no external dependencies.
 
-The function `decode_single(data)` converts a 4 bytes string `data` containing little endian IEEE754 encoded single precision floating numbers into a Lua number.
-
 The function `decode_double(data)` converts an 8 bytes string `data` containing little endian IEEE754 single precision encoded floating numbers into a Lua number.
+The function `encode_double(num)` converts a Lua number to the 8 bytes binary representation.
 
-Example: 
+The function `decode_single(data)` converts a 4 bytes string `data` containing little endian IEEE754 encoded single precision floating numbers into a Lua number.
+The function `encode_single(num)` converts a Lua number to the 4 bytes binary representation.
+
+The function `decode_half(data)` converts an 2 bytes string `data` containing little endian IEEE754 half precision encoded floating numbers into a Lua number.
+The function `encode_half(num)` converts a Lua number to the 2 bytes binary representation.
+
+
+Example:
 ```Lua
 one = binfloat.decode_single(string.char(0,0,128,63))`
 ```
@@ -40,10 +46,10 @@ The code assumes little endian data encoding ("Intel byte order").
 In case you have big endian data ("Network byte order"), turn the order of bytes:
 function | little endian | big endian
 --|--|--
-`decode_single(data)` | `local a,b,c,d = data:byte(1, 4);` | `local d,c,b,a = data:byte(1, 4);`  
-`decode_double(data)` | `local a,b,c,d,e,f,g,h = data:byte(1, 8);` | `local h,g,f,e,d,c,b,a = data:byte(1, 8);`  
+`decode_single(data)` | `local a,b,c,d = data:byte(1, 4);` | `local d,c,b,a = data:byte(1, 4);`
+`decode_double(data)` | `local a,b,c,d,e,f,g,h = data:byte(1, 8);` | `local h,g,f,e,d,c,b,a = data:byte(1, 8);`
 
-Would it be possible to add a parameter to indicate byte order? 
+Would it be possible to add a parameter to indicate byte order?
 It would be easy, but I never needed it. If someone needs it, write a GitLab issue and I will do it.
 
 
@@ -54,3 +60,4 @@ References
 - https://www.binaryconvert.com/result_float.html?hexadecimal=3F800000
 - https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 - https://www.binaryconvert.com/result_double.html?decimal=049046050051052053054055056057069049048
+- https://evanw.github.io/float-toy/

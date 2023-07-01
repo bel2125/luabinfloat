@@ -1,4 +1,4 @@
--- binfloat.lua: 
+-- binfloat.lua:
 -- A pure Lua implementation for encoding/decoding IEEE754 floating numbers, tested with Lua5.2 to Lua5.4
 -- This code assumes little endian data encoding ("Intel byte order").
 binfloat = {}
@@ -6,8 +6,8 @@ binfloat = {}
 
 -- bit test
 binfloat.internal = {}
-binfloat.internal.bittest = function(val, m) 
-    return math.floor(val / m) % 2 
+binfloat.internal.bittest = function(val, m)
+    return math.floor(val / m) % 2
 end
 
 
@@ -86,14 +86,14 @@ end
 binfloat.decode_half = function(data)
   local a,b = data:byte(1, 2);
   local bt = binfloat.internal.bittest;
-  local sign = bt(d, 128);
+  local sign = bt(b, 128);
 
   if ((b % 128) == 0) and (a == 0) then
     return (-1)^sign * 0.0;
   end
 
   local br = b % 4;
-  local exp = (b % 128) / 4;
+  local exp = ((b % 128) - (b % 4)) / 4;
 
   if exp == 31 then
     return (-1)^sign * math.huge;
@@ -104,7 +104,7 @@ binfloat.decode_half = function(data)
     frac = frac + bt(a,2^(8-i))/2^(2+i);
   end
 
-  return (-1)^sign * frac * 2^(exp-127);
+  return (-1)^sign * frac * 2^(exp-15);
 end
 
 
@@ -166,8 +166,8 @@ end
 
 -- convert number into 4 byte single precision floating point number
 binfloat.encode_single = function(num)
-  if (num == 0.0) then return string.char(0, 0, 0, 0) end
-  if (num == -0.0) then return string.char(0, 0, 0, 128) end
+  if (num >= 0.0) and (num <= 1.1754944e-38) then return string.char(0, 0, 0, 0) end
+  if (num <= -0.0) and (num >= -1.1754944e-38) then return string.char(0, 0, 0, 128) end
 
   local sign, exponent, fraction, mantis = binfloat.internal.floatsplit(num)
   exponent = exponent + 127;
@@ -188,8 +188,8 @@ end
 
 -- convert number into 2 byte half precision floating point number
 binfloat.encode_half = function(num)
-  if (num == 0.0) then return string.char(0, 0) end
-  if (num == -0.0) then return string.char(0, 128) end
+  if (num >= 0.0) and (num <= 6.105e-5) then return string.char(0, 0) end
+  if (num <= -0.0) and (num >= -6.105e-5) then return string.char(0,128) end
 
   local sign, exponent, fraction, mantis = binfloat.internal.floatsplit(num)
   exponent = exponent + 15;
