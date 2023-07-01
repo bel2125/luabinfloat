@@ -5,7 +5,8 @@ binfloat = {}
 
 
 -- bit test
-local function bt(val, m) 
+binfloat.internal = {}
+binfloat.internal.bittest = function(val, m) 
     return math.floor(val / m) % 2 
 end
 
@@ -13,6 +14,7 @@ end
 -- convert 8 bytes binary string encoding an IEEE754 double precision floating point number to a Lua number
 binfloat.decode_double = function(data)
   local a,b,c,d,e,f,g,h = data:byte(1, 8);
+  local bt = binfloat.internal.bittest;
   local sign = bt(h, 128)
 
   if ((h % 128) == 0) and (g == 0) and (f == 0) and (e == 0) and (d == 0) and (c == 0) and (b == 0) and (a == 0) then
@@ -54,6 +56,7 @@ end
 -- convert 4 bytes binary string encoding an IEEE754 single precision floating point number to a Lua number
 binfloat.decode_single = function(data)
   local a,b,c,d = data:byte(1, 4);
+  local bt = binfloat.internal.bittest;
   local sign = bt(d, 128)
 
   if ((d % 128) == 0) and (c == 0) and (b == 0) and (a == 0) then
@@ -79,8 +82,34 @@ binfloat.decode_single = function(data)
 end
 
 
+-- convert 2 bytes binary string encoding an IEEE754 half precision floating point number to a Lua number
+binfloat.decode_half = function(data)
+  local a,b = data:byte(1, 2);
+  local bt = binfloat.internal.bittest;
+  local sign = bt(d, 128);
+
+  if ((b % 128) == 0) and (a == 0) then
+    return (-1)^sign * 0.0;
+  end
+
+  local br = b % 4;
+  local exp = (b % 128) / 4;
+
+  if exp == 31 then
+    return (-1)^sign * math.huge;
+  end
+
+  local frac = 1 + bt(br,2)/2 + bt(br,1)/4;
+  for i=1,8 do
+    frac = frac + bt(a,2^(8-i))/2^(2+i);
+  end
+
+  return (-1)^sign * frac * 2^(exp-127);
+end
+
+
 -- split floating pointnumber into sign, exponent and mantissa
-local function floatsplit(n)
+binfloat.internal.floatsplit = function(n)
   local s = 0 -- sign
   local e = 0 -- exponent
   local f = n -- fraction
@@ -110,7 +139,7 @@ binfloat.encode_double = function(num)
   if (num == 0.0) then return string.char(0, 0, 0, 0, 0, 0, 0, 0) end
   if (num == -0.0) then return string.char(0, 0, 0, 0, 0, 0, 0, 128) end
 
-  local sign, exponent, fraction, mantis = floatsplit(num)
+  local sign, exponent, fraction, mantis = binfloat.internal.floatsplit(num)
   exponent = exponent + 1023;
   mantis = mantis .. string.rep("0", 52-string.len(mantis))
   mantis = mantis:sub(1,52)
@@ -140,7 +169,7 @@ binfloat.encode_single = function(num)
   if (num == 0.0) then return string.char(0, 0, 0, 0) end
   if (num == -0.0) then return string.char(0, 0, 0, 128) end
 
-  local sign, exponent, fraction, mantis = floatsplit(num)
+  local sign, exponent, fraction, mantis = binfloat.internal.floatsplit(num)
   exponent = exponent + 127;
   mantis = mantis .. string.rep("0", 23-string.len(mantis))
   mantis = mantis:sub(1,23)
@@ -154,6 +183,25 @@ binfloat.encode_single = function(num)
   local b4 = math.floor(mantisnum + 0.5)
 
   return string.char(b4,b3,b2,b1)
+end
+
+
+-- convert number into 2 byte half precision floating point number
+binfloat.encode_half = function(num)
+  if (num == 0.0) then return string.char(0, 0) end
+  if (num == -0.0) then return string.char(0, 128) end
+
+  local sign, exponent, fraction, mantis = binfloat.internal.floatsplit(num)
+  exponent = exponent + 15;
+  mantis = mantis .. string.rep("0", 10-string.len(mantis))
+  mantis = mantis:sub(1,10)
+  local mantisnum = tonumber(mantis, 2)
+
+  local b1 = sign*128 + exponent * 4 + math.floor(mantisnum / 2^8)
+  mantisnum = mantisnum % 2^8
+  local b2 = math.floor(mantisnum + 0.5)
+
+  return string.char(b2,b1)
 end
 
 
